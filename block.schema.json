@@ -1,0 +1,77 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.com/schemas/tiptap-doc.schema.json",
+    "title": "TipTap (ProseMirror) Document",
+    "type": "object",
+    "required": ["type"],
+    "additionalProperties": false,
+    "properties": {
+      "type": { "const": "doc" },
+      "attrs": { "$ref": "#/$defs/attrs" },
+      "content": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/node" }
+      }
+    },
+    "$defs": {
+      "attrs": {
+        "type": "object",
+        "additionalProperties": true
+      },
+  
+      "node": {
+        "type": "object",
+        "required": ["type"],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Node type (e.g., paragraph, heading, bulletList, listItem, text, image, etc.)"
+          },
+          "attrs": { "$ref": "#/$defs/attrs" },
+          "content": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/node" }
+          },
+          "marks": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/mark" }
+          },
+          "text": {
+            "type": "string",
+            "description": "Only used when type is 'text'"
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "type": { "const": "text" } }, "required": ["type"] },
+            "then": { "required": ["text"], "not": { "required": ["content"] } }
+          },
+          {
+            "if": { "properties": { "type": { "not": { "const": "text" } } }, "required": ["type"] },
+            "then": {
+              "not": {
+                "required": ["text"]
+              }
+            }
+          }
+        ]
+      },
+  
+      "mark": {
+        "type": "object",
+        "required": ["type"],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Mark type (e.g., bold, italic, link, code, strike, underline, textStyle, etc.)"
+          },
+          "attrs": { "$ref": "#/$defs/attrs" }
+        }
+      }
+    }
+  }
+  

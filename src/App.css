@@ -1,0 +1,232 @@
+/* Main App Layout */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg-primary);
+}
+
+/* Header */
+.app__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md) var(--space-lg);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-secondary) 0%,
+    var(--color-bg-primary) 100%
+  );
+  border-bottom: 1px solid var(--color-border-muted);
+}
+
+.app__title {
+  font-family: var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--color-accent) 0%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.app__subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-xs);
+  font-weight: 400;
+}
+
+/* Main content area with editor panels */
+.app__main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 1px;
+  background: var(--color-border-muted);
+}
+
+/* Editor panels */
+.editor-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--color-bg-primary);
+}
+
+.editor-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-muted);
+}
+
+.editor-panel__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+}
+
+.editor-panel__status {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-success-dim);
+  color: var(--color-success);
+  transition: all var(--transition-fast);
+}
+
+.editor-panel__status--error {
+  background: var(--color-error-dim);
+  color: var(--color-error);
+}
+
+.editor-panel__content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Divider between panels */
+.editor-divider {
+  width: 4px;
+  background: var(--color-bg-tertiary);
+  cursor: col-resize;
+  transition: background var(--transition-fast);
+}
+
+.editor-divider:hover {
+  background: var(--color-accent);
+}
+
+/* Status Bar */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border-muted);
+  min-height: 40px;
+}
+
+.status-bar--valid {
+  border-top-color: var(--color-success-dim);
+}
+
+.status-bar--error {
+  border-top-color: var(--color-error);
+}
+
+.status-bar__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-bar__message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-bar__message--valid {
+  color: var(--color-success);
+}
+
+.status-bar__message--error {
+  color: var(--color-error);
+}
+
+.status-bar__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+
+.status-bar__message--valid .status-bar__icon {
+  background: var(--color-success-dim);
+}
+
+.status-bar__message--error .status-bar__icon {
+  background: var(--color-error-dim);
+}
+
+.status-bar__indicators {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.status-indicator {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.status-indicator--valid {
+  background: var(--color-success-dim);
+  color: var(--color-success);
+}
+
+.status-indicator--error {
+  background: var(--color-error-dim);
+  color: var(--color-error);
+  animation: pulse-error 2s infinite;
+}
+
+@keyframes pulse-error {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Monaco editor container adjustments */
+.editor-panel__content .monaco-editor {
+  padding-top: var(--space-sm);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .app__main {
+    flex-direction: column;
+  }
+  
+  .editor-divider {
+    width: 100%;
+    height: 4px;
+    cursor: row-resize;
+  }
+  
+  .app__header {
+    padding: var(--space-sm) var(--space-md);
+  }
+  
+  .app__title {
+    font-size: 1.25rem;
+  }
+}
