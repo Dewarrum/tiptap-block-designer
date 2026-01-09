@@ -123,6 +123,64 @@ pnpm run build
 
 The production build will be in the `dist/` directory.
 
+## Deployment
+
+### Cloudflare Pages
+
+This application is configured for deployment on Cloudflare Pages.
+
+#### Option 1: Git Integration (Recommended)
+
+1. Push your code to a GitHub or GitLab repository
+2. Log in to the [Cloudflare Dashboard](https://dash.cloudflare.com/)
+3. Go to **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**
+4. Select your repository and configure:
+   - **Build command**: `pnpm run build`
+   - **Build output directory**: `dist`
+   - **Node.js version**: Set `NODE_VERSION` environment variable to `20` or higher
+5. Click **Save and Deploy**
+
+#### Option 2: Direct Upload
+
+```bash
+# Install Wrangler CLI
+pnpm add -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Build and deploy
+pnpm run build
+wrangler pages deploy dist --project-name=tiptap-block-designer
+```
+
+#### Option 3: Using Wrangler with Config
+
+```bash
+# Install Wrangler CLI
+pnpm add -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Deploy using wrangler.toml configuration
+wrangler pages deploy
+```
+
+### Environment Variables
+
+If deploying via the Cloudflare dashboard, set these environment variables:
+
+| Variable | Value |
+|----------|-------|
+| `NODE_VERSION` | `20` |
+
+### Included Configuration Files
+
+- `wrangler.toml` — Cloudflare Pages build configuration
+- `public/_redirects` — SPA routing (redirects all paths to index.html)
+- `public/_headers` — Security headers and asset caching
+
 ## Tech Stack
 
 - **React** — UI framework
