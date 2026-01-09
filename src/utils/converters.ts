@@ -21,12 +21,40 @@ function escapeXml(text: string): string {
 }
 
 /**
+ * Escapes special XML characters for attribute values (using single quotes as delimiter)
+ * Only escapes &, <, >, and single quotes - double quotes are left as-is for JSON readability
+ */
+function escapeXmlAttr(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
+ * Serializes an attribute value for XML output
+ * - Objects/arrays are serialized to JSON strings
+ * - Primitives are converted to strings directly
+ */
+function serializeAttrValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+/**
  * Converts attributes object to XML attribute string
+ * Uses single quotes for attribute values to avoid escaping double quotes in JSON
  */
 function attrsToXmlString(attrs: Record<string, unknown> | undefined): string {
   if (!attrs || Object.keys(attrs).length === 0) return '';
   return Object.entries(attrs)
-    .map(([key, value]) => ` ${key}="${escapeXml(String(value))}"`)
+    .map(([key, value]) => ` ${key}='${escapeXmlAttr(serializeAttrValue(value))}'`)
     .join('');
 }
 
@@ -112,6 +140,42 @@ function isMarkType(tagName: string): boolean {
   return MARK_TYPES.has(tagName);
 }
 
+/**
+ * Attempts to deserialize a string value as JSON if it looks like a JSON object/array
+ * Returns the parsed object if successful, otherwise returns the original value
+ */
+function deserializeAttrValue(value: unknown): unknown {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  const trimmed = value.trim();
+  // Check if it looks like a JSON object or array
+  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      // Not valid JSON, return original string
+      return value;
+    }
+  }
+  return value;
+}
+
+/**
+ * Processes attributes from XML, deserializing any JSON strings back to objects
+ */
+function processAttrs(attrs: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  if (!attrs || Object.keys(attrs).length === 0) {
+    return undefined;
+  }
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(attrs)) {
+    result[key] = deserializeAttrValue(value);
+  }
+  return result;
+}
+
 // Type for parsed XML with preserveOrder
 // Using a more permissive type since fast-xml-parser's output is complex
 type ParsedElement = {
@@ -141,7 +205,8 @@ function extractTextWithMarks(
   
   for (const element of elements) {
     const tagName = getTagName(element);
-    const attrs = element[':@'] as Record<string, unknown> | undefined;
+    const rawAttrs = element[':@'] as Record<string, unknown> | undefined;
+    const attrs = processAttrs(rawAttrs);
     
     // Handle text content (skip whitespace-only text nodes)
     if ('#text' in element) {
@@ -163,7 +228,7 @@ function extractTextWithMarks(
         // This is a mark - accumulate and recurse
         const mark: TipTapMark = { type: tagName };
         if (attrs && Object.keys(attrs).length > 0) {
-          mark.attrs = { ...attrs };
+          mark.attrs = attrs;
         }
         const newMarks = [...parentMarks, mark];
         results.push(...extractTextWithMarks(children, newMarks));
@@ -186,13 +251,14 @@ function convertElement(element: ParsedElement): TipTapNode {
     throw new Error('Element has no tag name');
   }
   
-  const attrs = element[':@'] as Record<string, unknown> | undefined;
+  const rawAttrs = element[':@'] as Record<string, unknown> | undefined;
+  const attrs = processAttrs(rawAttrs);
   const children = element[tagName] as ParsedElement[];
   
   const result: TipTapNode = { type: tagName };
   
   if (attrs && Object.keys(attrs).length > 0) {
-    result.attrs = { ...attrs };
+    result.attrs = attrs;
   }
   
   if (children && children.length > 0) {
