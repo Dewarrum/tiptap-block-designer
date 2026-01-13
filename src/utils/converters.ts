@@ -48,19 +48,46 @@ function serializeAttrValue(value: unknown): string {
 }
 
 /**
- * Converts attributes object to XML attribute string
- * Uses single quotes for attribute values to avoid escaping double quotes in JSON
+ * Converts attributes object to XML attribute entries
+ * Returns an array of { key, value } pairs for flexible formatting
  */
-function attrsToXmlString(attrs: Record<string, unknown> | undefined): string {
-  if (!attrs || Object.keys(attrs).length === 0) return '';
-  return Object.entries(attrs)
-    .map(([key, value]) => ` ${key}='${escapeXmlAttr(serializeAttrValue(value))}'`)
-    .join('');
+function getAttrEntries(attrs: Record<string, unknown> | undefined): Array<{ key: string; value: string }> {
+  if (!attrs || Object.keys(attrs).length === 0) return [];
+  return Object.entries(attrs).map(([key, value]) => ({
+    key,
+    value: escapeXmlAttr(serializeAttrValue(value)),
+  }));
+}
+
+/**
+ * Formats attributes for XML output
+ * - 0-1 attributes: inline format (e.g., ` id='value'`)
+ * - 2+ attributes: multi-line format with each attribute on its own line
+ */
+function formatAttrs(attrs: Record<string, unknown> | undefined, baseIndent: string): { attrString: string } {
+  const entries = getAttrEntries(attrs);
+  
+  if (entries.length === 0) {
+    return { attrString: '' };
+  }
+  
+  if (entries.length === 1) {
+    return { attrString: ` ${entries[0].key}='${entries[0].value}'` };
+  }
+  
+  // Multi-line format: each attribute on its own line, indented 4 spaces from element
+  const attrIndent = baseIndent + '    ';
+  const attrString = '\n' + entries
+    .map(({ key, value }) => `${attrIndent}${key}='${value}'`)
+    .join('\n');
+  
+  return { attrString };
 }
 
 /**
  * Wraps text content with mark elements (innermost mark first)
  * e.g., marks=[bold, italic] => <bold><italic>text</italic></bold>
+ * Marks are always inline, so we use simple inline attribute formatting
  */
 function wrapTextWithMarks(text: string, marks: TipTapMark[]): string {
   if (!marks || marks.length === 0) return escapeXml(text);
@@ -69,8 +96,9 @@ function wrapTextWithMarks(text: string, marks: TipTapMark[]): string {
   let result = escapeXml(text);
   for (let i = marks.length - 1; i >= 0; i--) {
     const mark = marks[i];
-    const attrs = attrsToXmlString(mark.attrs);
-    result = `<${mark.type}${attrs}>${result}</${mark.type}>`;
+    const entries = getAttrEntries(mark.attrs);
+    const attrString = entries.map(({ key, value }) => ` ${key}='${value}'`).join('');
+    result = `<${mark.type}${attrString}>${result}</${mark.type}>`;
   }
   return result;
 }
@@ -84,12 +112,12 @@ function nodeToXml(node: TipTapNode, indent: string = ''): string {
     return wrapTextWithMarks(node.text, node.marks || []);
   }
   
-  const attrs = attrsToXmlString(node.attrs);
+  const { attrString } = formatAttrs(node.attrs, indent);
   
   // Check if node has content
   if (!node.content || node.content.length === 0) {
     // Self-closing tag for void elements
-    return `${indent}<${node.type}${attrs} />`;
+    return `${indent}<${node.type}${attrString} />`;
   }
   
   // Check if content contains only text nodes (inline content)
@@ -98,7 +126,7 @@ function nodeToXml(node: TipTapNode, indent: string = ''): string {
   if (hasOnlyTextContent) {
     // Inline content - no extra whitespace
     const innerContent = node.content.map(child => nodeToXml(child, '')).join('');
-    return `${indent}<${node.type}${attrs}>${innerContent}</${node.type}>`;
+    return `${indent}<${node.type}${attrString}>${innerContent}</${node.type}>`;
   }
   
   // Block content - add newlines and indentation
@@ -106,7 +134,7 @@ function nodeToXml(node: TipTapNode, indent: string = ''): string {
   const innerContent = node.content
     .map(child => nodeToXml(child, childIndent))
     .join('\n');
-  return `${indent}<${node.type}${attrs}>\n${innerContent}\n${indent}</${node.type}>`;
+  return `${indent}<${node.type}${attrString}>\n${innerContent}\n${indent}</${node.type}>`;
 }
 
 /**
